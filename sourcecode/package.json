@@ -1,0 +1,54 @@
+{
+  "name": "tomy-simulator",
+  "version": "1.0.0",
+  "description": "Tomy Simulator - Widget de devinette avec Tom !",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-portable": "electron-builder --win portable",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["tomy", "simulator", "game", "number-guessing", "widget"],
+  "author": "Sasha",
+  "license": "ISC",
+  "homepage": ".",
+  "devDependencies": {
+    "electron": "^38.2.2",
+    "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "@electron/remote": "^2.1.3"
+  },
+  "build": {
+    "appId": "com.sasha.tomy-simulator",
+    "productName": "Tomy Simulator",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "game.exe",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "asarUnpack": [
+      "assets/**/*",
+      "game.exe"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/tomy.ico"
+    },
+    "portable": {
+      "artifactName": "Tomy-Simulator-Portable.exe"
+    }
+  }
+}

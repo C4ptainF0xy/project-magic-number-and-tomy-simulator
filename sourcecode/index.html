@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devine le nombre de Tom !</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 480px;
+            height: 610px;
+            margin: 10px auto;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        h1 {
+            color: #4a5568;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            -webkit-app-region: no-drag;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-app-region: no-drag;
+        }
+
+        .close-btn:hover {
+            background: #ff3838;
+        }
+
+        .tom-container {
+            margin: 1.5rem 0;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(247, 250, 252, 0.8);
+            border-radius: 15px;
+            position: relative;
+            -webkit-app-region: no-drag;
+        }
+
+        .tom-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            transition: all 0.3s ease;
+            border: 3px solid rgba(255,255,255,0.5);
+        }
+
+        .tom-speech {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tom-speech.show {
+            opacity: 1;
+        }
+
+        .tom-speech::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: white;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+
+        .attempts {
+            color: #e53e3e;
+        }
+
+        .range {
+            color: #38a169;
+        }
+
+        .input-section {
+            margin: 1.5rem 0;
+            -webkit-app-region: no-drag;
+        }
+
+        input[type="number"] {
+            padding: 0.8rem;
+            font-size: 1.1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            width: 120px;
+            text-align: center;
+            margin: 0 0.5rem;
+            transition: border-color 0.3s ease;
+            -webkit-app-region: no-drag;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            -webkit-app-region: no-drag;
+        }
+
+        .guess-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .guess-btn:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .guess-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .retry-btn {
+            background: #38a169;
+            color: white;
+        }
+
+        .retry-btn:hover {
+            background: #2f855a;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: bold;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.neutral {
+            background: #edf2f7;
+            color: #4a5568;
+        }
+
+        .message.too-low {
+            background: #fef5e7;
+            color: #c05621;
+        }
+
+        .message.too-high {
+            background: #fef5e7;
+            color: #c05621;
+        }
+
+        .message.win {
+            background: #f0fff4;
+            color: #22543d;
+        }
+
+        .message.lose {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .bounce {
+            animation: bounce 0.6s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <button class="close-btn" onclick="closeApp()">×</button>
+        <h1>🎯 Tomy Simulator</h1>
+        
+        <div class="tom-container">
+            <img class="tom-image" id="tomImage" src="assets/tom-thinking.png" alt="Tom">
+            <div class="tom-speech" id="tomSpeech">Je pense à un nombre entre 1 et 100...</div>
+        </div>
+
+        <div class="game-info">
+            <div class="range">Entre 1 et 100</div>
+            <div class="attempts">Essais: <span id="attempts">0</span>/15</div>
+        </div>
+
+        <div class="message neutral" id="message">
+            Tom pense à un nombre... À toi de deviner !
+        </div>
+
+        <div class="input-section">
+            <input type="number" id="guessInput" min="1" max="100" placeholder="?" autofocus>
+            <div class="buttons">
+                <button class="guess-btn" id="guessBtn" onclick="makeGuess()">Deviner</button>
+                <button class="retry-btn" id="retryBtn" onclick="newGame()">Nouveau jeu</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables pour le jeu
+        var secretNumber; // le nombre secret
+        var attempts; // nombre d'essais
+        var maxAttempts = 15; // maximum d'essais
+        var gameOver = false; // si le jeu est fini
+        var wasClose = false; // si on a déjà été proche
+
+        // On récupère les éléments HTML
+        var tomImage = document.getElementById('tomImage');
+        var tomSpeech = document.getElementById('tomSpeech');
+        var attemptsSpan = document.getElementById('attempts');
+        var messageDiv = document.getElementById('message');
+        var guessInput = document.getElementById('guessInput');
+        var guessBtn = document.getElementById('guessBtn');
+
+        // Les différentes images de Tom
+        var tomImages = {
+            thinking: 'assets/tom-thinking.png',
+            neutral: 'assets/tom-neutral.png',
+            sad: 'assets/tom-sad.png',
+            happy: 'assets/tom-happy.png',
+            hein: 'assets/tom-hein.png'
+        };
+
+        // Les fichiers audio de Tom
+        var tomAudios = {
+            jepenseaunnombre: 'assets/jepenseaunnombre.ogg',
+            bravooo: 'assets/bravooo.ogg',
+            cetaismarrant: 'assets/cetaismarrantmaintenantdegage.ogg',
+            commentcaplus: 'assets/commentcaplusdedixessaistesnulfrerot.ogg',
+            commentcatudevi: 'assets/commentcatudevinedupremiercouptricheur.ogg',
+            faituneffort: 'assets/faituneffort.ogg',
+            nantesserieux: 'assets/nantesserieuxla.ogg',
+            ontaberce: 'assets/ontabercetroppresdumur.ogg',
+            teseclate: 'assets/teseclateausol.ogg',
+            tuchauffes: 'assets/tuchauffes.ogg'
+        };
+
+        // Fonction pour jouer un son
+        function playTomSound(soundKey) {
+            try {
+                if (tomAudios[soundKey]) {
+                    var audio = new Audio(tomAudios[soundKey]);
+                    audio.volume = 0.7; // Volume à 70%
+                    
+                    // Précharger et jouer le son
+                    audio.preload = 'auto';
+                    audio.load();
+                    
+                    audio.play().catch(function(error) {
+                        console.log('Erreur lors de la lecture audio:', error);
+                        console.log('Chemin audio:', tomAudios[soundKey]);
+                        
+                        // Essayer avec un chemin alternatif
+                        var altPath = './' + tomAudios[soundKey];
+                        var altAudio = new Audio(altPath);
+                        altAudio.volume = 0.7;
+                        altAudio.play().catch(function(altError) {
+                            console.log('Erreur avec chemin alternatif:', altError);
+                        });
+                    });
+                }
+            } catch (error) {
+                console.log('Erreur audio:', error);
+            }
+        }
+
+        // Fonction pour faire parler Tom
+        function showTomSpeech(message) {
+            tomSpeech.textContent = message;
+            tomSpeech.classList.add('show');
+            // Après 3 secondes, on cache le message
+            setTimeout(function() {
+                tomSpeech.classList.remove('show');
+            }, 3000);
+        }
+
+        // Fonction pour changer l'état de Tom (son image et ce qu'il dit)
+        function updateTomState(state, message) {
+            tomImage.src = tomImages[state];
+            tomImage.classList.add('bounce');
+            // Après 0.6 secondes, on retire l'animation bounce
+            setTimeout(function() {
+                tomImage.classList.remove('bounce');
+            }, 600);
+            
+            if (message) {
+                showTomSpeech(message);
+            }
+        }
+
+        // Fonction pour choisir un message au hasard dans une liste
+        function getRandomMessage(messages) {
+            var randomIndex = Math.floor(Math.random() * messages.length);
+            return messages[randomIndex];
+        }
+
+        // Fonction pour commencer un nouveau jeu
+        function newGame() {
+            // On demande au programme principal de générer un nouveau nombre
+            require('electron').ipcRenderer.invoke('new-game').then(function(result) {
+                if (result.success) {
+                    secretNumber = result.secretNumber;
+                    attempts = 0;
+                    gameOver = false;
+                    wasClose = false;
+                    
+                    // On remet l'affichage à zéro
+                    attemptsSpan.textContent = attempts;
+                    guessInput.value = '';
+                    guessInput.disabled = false;
+                    guessBtn.disabled = false;
+                    
+                    // Tom réfléchit
+                    updateTomState('thinking', "Je pense à un nombre entre 1 et 100...");
+                    
+                    messageDiv.textContent = "Tom pense à un nombre... À toi de deviner !";
+                    messageDiv.className = 'message neutral';
+                    
+                    // Tom dit sa phrase d'introduction
+                    playTomSound('jepenseaunnombre');
+                    
+                    // On met le focus sur le champ de saisie
+                    guessInput.focus();
+                } else {
+                    alert('Erreur : ' + result.error);
+                }
+            }).catch(function(error) {
+                alert('Erreur de communication');
+                console.log('Erreur:', error);
+            });
+        }
+
+        // Fonction appelée quand le joueur fait une proposition
+        function makeGuess() {
+            // Si le jeu est fini, on ne fait rien
+            if (gameOver) return;
+            
+            // On récupère ce que le joueur a tapé
+            var inputValue = guessInput.value.trim();
+            
+            // On vérifie que c'est bien un nombre valide
+            if (inputValue === '' || inputValue.includes(',') || inputValue.includes(' ') || inputValue.includes('.')) {
+                guessInput.value = '';
+                alert('Veuillez entrer UN SEUL nombre entier entre 1 et 100 !');
+                guessInput.focus();
+                return;
+            }
+            
+            // On convertit en nombre
+            var guess = parseInt(inputValue);
+            
+            // On vérifie encore une fois
+            if (isNaN(guess) || guess < 1 || guess > 100 || inputValue !== guess.toString()) {
+                guessInput.value = '';
+                alert('Veuillez entrer UN SEUL nombre entier entre 1 et 100 !');
+                guessInput.focus();
+                return;
+            }
+            
+            // On demande au programme principal de vérifier notre proposition
+            require('electron').ipcRenderer.invoke('make-guess', guess).then(function(result) {
+                if (!result.success) {
+                    alert(result.error);
+                    return;
+                }
+                
+                // On augmente le nombre d'essais
+                attempts++;
+                attemptsSpan.textContent = attempts;
+                guessInput.value = '';
+                
+                // On calcule la différence pour savoir si on est proche
+                var difference = Math.abs(guess - secretNumber);
+                
+                // Si on a gagné
+                if (result.result === 'win') {
+                    var winMessages = [
+                        "C'était marrant ! Bon maintenant tu dégages",
+                        "Bravooo gégéééé on applaudissss"
+                    ];
+                    var winMessage = getRandomMessage(winMessages);
+                    
+                    // Choisir la voiceline selon le nombre d'essais
+                    if (attempts === 1) {
+                        // Premier coup = tricheur
+                        playTomSound('commentcatudevi');
+                        updateTomState('hein', "Comment ça, tu devines du premier coup ?! Tricheur !");
+                    } else {
+                        // Victoire normale - alterner entre les deux sons
+                        var winSounds = ['bravooo', 'cetaismarrant'];
+                        var randomSound = winSounds[Math.floor(Math.random() * winSounds.length)];
+                        playTomSound(randomSound);
+                        updateTomState('happy', winMessage);
+                    }
+                    
+                    var essaiText = attempts > 1 ? 's' : '';
+                    messageDiv.textContent = '🎉 Félicitations ! Tu as trouvé ' + secretNumber + ' en ' + attempts + ' essai' + essaiText + ' !';
+                    messageDiv.className = 'message win';
+                    gameOver = true;
+                    guessInput.disabled = true;
+                    guessBtn.disabled = true;
+                // Si on a perdu (trop d'essais)
+                } else if (attempts >= maxAttempts) {
+                    playTomSound('teseclate');
+                    updateTomState('sad', "T'es éclaté au sol poto");
+                    messageDiv.textContent = '😞 Perdu ! Le nombre était ' + secretNumber + '. Tu as épuisé tes ' + maxAttempts + ' essais.';
+                    messageDiv.className = 'message lose';
+                    gameOver = true;
+                    guessInput.disabled = true;
+                    guessBtn.disabled = true;
+                // Si le jeu continue
+                } else {
+                    var message, tomMessage, tomState;
+                    
+                    // Gestion des voicelines selon les essais (seulement au 11ème essai)
+                    if (attempts === 11) {
+                        playTomSound('commentcaplus');
+                    }
+                    
+                    // Si on était proche avant et maintenant on est loin
+                    if (wasClose && difference >= 20) {
+                        var heinMessages = [
+                            "T'es sérieux frérot ?",
+                            "On t'a bercé trop près du mur ou quoi ?",
+                            "Fait un effort s'te plait"
+                        ];
+                        var heinSounds = ['nantesserieux', 'ontaberce', 'faituneffort'];
+                        var randomHeinSound = heinSounds[Math.floor(Math.random() * heinSounds.length)];
+                        playTomSound(randomHeinSound);
+                        tomState = 'hein';
+                        tomMessage = getRandomMessage(heinMessages);
+                    } else if (difference <= 5) {
+                        // Très proche - Tom neutre
+                        wasClose = true;
+                        playTomSound('tuchauffes');
+                        tomState = 'neutral';
+                        tomMessage = "Tu chauffes ! Tu es proche !";
+                    } else {
+                        // Pas très proche - Tom pensif
+                        tomState = 'thinking';
+                    }
+                    
+                    var remainingAttempts = maxAttempts - attempts;
+                    var essaiText = remainingAttempts > 1 ? 's' : '';
+                    
+                    if (result.result === 'too-low') {
+                        message = result.message + ' Il me reste ' + remainingAttempts + ' essai' + essaiText + '.';
+                        messageDiv.className = 'message too-low';
+                        if (!tomMessage) tomMessage = "C'est trop petit ! Continue...";
+                    } else if (result.result === 'too-high') {
+                        message = result.message + ' Il me reste ' + remainingAttempts + ' essai' + essaiText + '.';
+                        messageDiv.className = 'message too-high';
+                        if (!tomMessage) tomMessage = "C'est trop grand ! Continue...";
+                    }
+                    
+                    messageDiv.textContent = message;
+                    updateTomState(tomState, tomMessage);
+                }
+                
+                guessInput.focus();
+            }).catch(function(error) {
+                alert('Erreur de communication');
+                console.log('Erreur:', error);
+            });
+        }
+
+        // Quand on appuie sur Entrée dans le champ de saisie
+        guessInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                makeGuess();
+            }
+        });
+
+        // Fonction pour fermer l'application
+        function closeApp() {
+            if (confirm('Voulez-vous vraiment fermer Tomy Simulator ?')) {
+                require('@electron/remote').getCurrentWindow().close();
+            }
+        }
+
+        // On démarre un nouveau jeu au chargement de la page
+        newGame();
+    </script>
+</body>
+</html>
